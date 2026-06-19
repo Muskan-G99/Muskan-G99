@@ -4,7 +4,7 @@ import Card from '../ui/Card'
 import StatCard from '../ui/StatCard'
 import Badge from '../ui/Badge'
 import { formatCurrency, formatDate, formatMonth } from '../../lib/format'
-import { getCard, bestCardForCategory } from '../../data/cards'
+import { getCard, getEffectiveRate, bestCardForCategory } from '../../data/cards'
 import { CATEGORIES } from '../../lib/constants'
 import { CreditCard, Gift, TrendingUp, Wallet } from 'lucide-react'
 
@@ -19,7 +19,7 @@ export default function OverviewModule({ transactions, holdings, onNavigate }) {
     () =>
       transactions.reduce((sum, t) => {
         const card = getCard(t.card)
-        return card ? sum + t.amount * (card.rates[t.category] / 100) : sum
+        return card ? sum + t.amount * (getEffectiveRate(card, t) / 100) : sum
       }, 0),
     [transactions],
   )

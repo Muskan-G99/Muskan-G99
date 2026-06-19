@@ -7,7 +7,7 @@ import { parseTransactionsCSVFiles } from '../../lib/csv'
 import { formatCurrency, formatDate } from '../../lib/format'
 import { CATEGORIES } from '../../lib/constants'
 import { CARDS, getCard, getEffectiveRate, bestCardForTransaction } from '../../data/cards'
-import { CreditCard, Receipt, TrendingUp, CheckCircle2, ArrowRightCircle } from 'lucide-react'
+import { CreditCard, Receipt, TrendingUp, Gift, CheckCircle2, ArrowRightCircle } from 'lucide-react'
 
 const getRecommendation = (t) => {
   const card = getCard(t.card)
@@ -16,7 +16,8 @@ const getRecommendation = (t) => {
   const bestRate = getEffectiveRate(best, t)
   const isOptimal = actualRate >= bestRate
   const extra = isOptimal ? 0 : t.amount * ((bestRate - actualRate) / 100)
-  return { card, best, isOptimal, extra }
+  const earned = card ? t.amount * (actualRate / 100) : 0
+  return { card, best, isOptimal, extra, earned }
 }
 
 export default function TransactionsModule({ transactions, onImport }) {
@@ -37,6 +38,11 @@ export default function TransactionsModule({ transactions, onImport }) {
     return Object.entries(totals).sort((a, b) => b[1] - a[1])[0]
   }, [transactions])
 
+  const rewardsEarned = useMemo(
+    () => transactions.reduce((sum, t) => sum + getRecommendation(t).earned, 0),
+    [transactions],
+  )
+
   const missedRewards = useMemo(
     () => transactions.reduce((sum, t) => sum + getRecommendation(t).extra, 0),
     [transactions],
@@ -48,7 +54,7 @@ export default function TransactionsModule({ transactions, onImport }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard label="Total Tracked Spend" value={formatCurrency(totalSpent)} icon={Receipt} />
         <StatCard label="Transactions" value={transactions.length} icon={CreditCard} />
         <StatCard
@@ -57,6 +63,7 @@ export default function TransactionsModule({ transactions, onImport }) {
           sublabel={topCategory ? formatCurrency(topCategory[1]) : ''}
           icon={TrendingUp}
         />
+        <StatCard label="Rewards Earned" value={formatCurrency(rewardsEarned)} icon={Gift} tone="positive" />
         <StatCard
           label="Missed Rewards"
           value={formatCurrency(missedRewards)}
