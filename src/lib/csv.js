@@ -17,7 +17,7 @@ const pick = (row, keys) => {
   return undefined
 }
 
-export const parseTransactionsCSV = (file, onComplete) => {
+export const parseTransactionsCSV = (file, cardId, onComplete) => {
   Papa.parse(file, {
     header: true,
     skipEmptyLines: true,
@@ -32,17 +32,32 @@ export const parseTransactionsCSV = (file, onComplete) => {
           const amount = Math.abs(parseFloat(String(amountRaw).replace(/[^0-9.-]/g, '')))
           const category = CATEGORIES.includes(categoryRaw) ? categoryRaw : guessCategory(description)
           return {
-            id: `import-${Date.now()}-${i}`,
+            id: `import-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
             date,
             merchant: description,
             amount,
             category,
-            card: 'imported',
+            card: cardId || 'imported',
           }
         })
         .filter(Boolean)
       onComplete(rows)
     },
+  })
+}
+
+// Parses one or more CSV files (e.g. separate statement exports per card) and
+// merges the resulting transactions into a single batch once all are done.
+export const parseTransactionsCSVFiles = (files, cardId, onComplete) => {
+  const fileList = Array.from(files)
+  const results = new Array(fileList.length)
+  let remaining = fileList.length
+  fileList.forEach((file, i) => {
+    parseTransactionsCSV(file, cardId, (rows) => {
+      results[i] = rows
+      remaining -= 1
+      if (remaining === 0) onComplete(results.flat())
+    })
   })
 }
 

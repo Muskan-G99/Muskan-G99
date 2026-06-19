@@ -3,10 +3,10 @@ import Card from '../ui/Card'
 import StatCard from '../ui/StatCard'
 import Badge from '../ui/Badge'
 import ImportButton from '../ui/ImportButton'
-import { parseTransactionsCSV } from '../../lib/csv'
+import { parseTransactionsCSVFiles } from '../../lib/csv'
 import { formatCurrency, formatDate } from '../../lib/format'
 import { CATEGORIES } from '../../lib/constants'
-import { getCard, getEffectiveRate, bestCardForTransaction } from '../../data/cards'
+import { CARDS, getCard, getEffectiveRate, bestCardForTransaction } from '../../data/cards'
 import { CreditCard, Receipt, TrendingUp, CheckCircle2, ArrowRightCircle } from 'lucide-react'
 
 const getRecommendation = (t) => {
@@ -22,6 +22,7 @@ const getRecommendation = (t) => {
 export default function TransactionsModule({ transactions, onImport }) {
   const [categoryFilter, setCategoryFilter] = useState('All')
   const [showSuboptimalOnly, setShowSuboptimalOnly] = useState(false)
+  const [importCard, setImportCard] = useState(CARDS[0].id)
 
   const filtered = useMemo(() => {
     let list = categoryFilter === 'All' ? transactions : transactions.filter((t) => t.category === categoryFilter)
@@ -41,8 +42,8 @@ export default function TransactionsModule({ transactions, onImport }) {
     [transactions],
   )
 
-  const handleFile = (file) => {
-    parseTransactionsCSV(file, (rows) => onImport(rows))
+  const handleFiles = (files) => {
+    parseTransactionsCSVFiles(files, importCard, (rows) => onImport(rows))
   }
 
   return (
@@ -88,7 +89,19 @@ export default function TransactionsModule({ transactions, onImport }) {
                 <option key={c}>{c}</option>
               ))}
             </select>
-            <ImportButton label="Import CSV" onFile={handleFile} />
+            <select
+              value={importCard}
+              onChange={(e) => setImportCard(e.target.value)}
+              title="Card these CSV(s) belong to"
+              className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-600"
+            >
+              {CARDS.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.shortName}
+                </option>
+              ))}
+            </select>
+            <ImportButton label="Import CSV" onFile={handleFiles} multiple />
           </div>
         }
       >
